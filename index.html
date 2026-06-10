@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palette — 配色產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sans: 'DM Sans', 'Inter', sans-serif;
+  --mono: 'SF Mono', 'Fira Code', monospace;
+  --gray-50: #fafaf9;
+  --gray-100: #f4f4f1;
+  --gray-200: #e8e8e3;
+  --gray-400: #b0b0a8;
+  --gray-600: #737368;
+  --gray-800: #2c2c28;
+  --gray-900: #181815;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--sans);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 56px;
+  border-bottom: 1px solid var(--gray-200);
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--gray-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary, #5C6BC0);
+  transition: background 0.3s;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-pill {
+  display: flex;
+  background: var(--gray-100);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.tab-pill button {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  color: var(--gray-600);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-pill button.active {
+  background: #fff;
+  color: var(--gray-900);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ── MAIN LAYOUT ── */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left {
+  width: 300px;
+  min-width: 300px;
+  border-right: 1px solid var(--gray-200);
+  background: #fff;
+  padding: 24px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 12px;
+}
+
+/* Color picker */
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.big-swatch {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s;
+}
+
+.big-swatch:hover { transform: scale(1.05); }
+
+.big-swatch input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.color-meta { flex: 1; }
+
+.hex-input {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.hex-input:focus { border-color: var(--gray-400); }
+
+.hsl-display {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 5px;
+  font-family: var(--mono);
+}
+
+/* Harmony swatches */
+.harmony-group { margin-bottom: 18px; }
+.harmony-label { font-size: 11px; color: var(--gray-600); margin-bottom: 8px; font-weight: 500; }
+
+.swatch-row {
+  display: flex;
+  gap: 6px;
+}
+
+.swatch-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.swatch-block {
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.swatch-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.swatch-hex {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--gray-400);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Scale */
+.scale-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.scale-block {
+  flex: 1;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.1s;
+}
+
+.scale-block:hover { transform: scaleY(1.15); }
+
+/* Contrast */
+.contrast-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12px;
+}
+
+.contrast-row:last-child { border-bottom: none; }
+.contrast-name { color: var(--gray-600); }
+.contrast-right { display: flex; align-items: center; gap: 6px; }
+.contrast-num { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+
+.wcag-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.wcag-aaa { background: #dcfce7; color: #166534; }
+.wcag-aa  { background: #dbeafe; color: #1e40af; }
+.wcag-fail{ background: #fee2e2; color: #991b1b; }
+
+/* Export */
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  color: var(--gray-800);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.export-btn:hover { background: var(--gray-100); border-color: var(--gray-400); }
+.export-btn:active { transform: scale(0.98); }
+
+.export-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── RIGHT PANEL ── */
+.right {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--gray-100);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: flex; flex-direction: column; gap: 20px; }
+
+/* Preview mockup */
+.mockup-browser {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.browser-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+
+.browser-url {
+  flex: 1;
+  margin: 0 12px;
+  height: 24px;
+  background: var(--gray-200);
+  border-radius: 6px;
+}
+
+/* Fake landing page inside browser */
+.fake-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.fake-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--preview-primary);
+}
+
+.fake-nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.fake-nav-link {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.fake-nav-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--preview-primary);
+  color: var(--preview-primary-text);
+  border: none;
+  cursor: default;
+}
+
+.fake-hero {
+  padding: 48px 28px 40px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.fake-hero-left { flex: 1; }
+
+.fake-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--preview-accent-bg);
+  color: var(--preview-accent-text);
+  margin-bottom: 14px;
+}
+
+.fake-h1 {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  color: var(--gray-900);
+  margin-bottom: 10px;
+}
+
+.fake-h1 span { color: var(--preview-primary); }
+
+.fake-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gray-600);
+  margin-bottom: 20px;
+  max-width: 380px;
+}
+
+.fake-btn-row { display: flex; gap: 10px; }
+
+.fake-btn-primary {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: var(--preview-primary);
+  color: var(--preview-primary-text);
+  border: none;
+  cursor: default;
+}
+
+.fake-btn-secondary {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--preview-primary);
+  border: 1.5px solid var(--preview-primary);
+  cursor: default;
+}
+
+.fake-hero-right {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.fake-card {
+  border-radius: 12px;
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  background: #fff;
+}
+
+.fake-card-header {
+  height: 80px;
+  background: var(--preview-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fake-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--preview-primary);
+}
+
+.fake-card-body { padding: 14px; }
+
+.fake-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.fake-card-text {
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.fake-card-btn {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px;
+  border-radius: 6px;
+  background: var(--preview-primary);
+  color: var(--preview-primary-text);
+  border: none;
+  cursor: default;
+  width: 100%;
+}
+
+.fake-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--gray-100);
+}
+
+.fake-stat {
+  padding: 16px 20px;
+  border-right: 1px solid var(--gray-100);
+  text-align: center;
+}
+
+.fake-stat:last-child { border-right: none; }
+
+.fake-stat-num {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--preview-primary);
+  margin-bottom: 2px;
+}
+
+.fake-stat-label {
+  font-size: 11px;
+  color: var(--gray-600);
+}
+
+/* Form mockup */
+.fake-form-wrap {
+  padding: 28px;
+  display: flex;
+  gap: 28px;
+}
+
+.fake-form { flex: 1; }
+
+.fake-form-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.fake-form-sub {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-bottom: 20px;
+}
+
+.fake-field { margin-bottom: 14px; }
+
+.fake-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-800);
+  margin-bottom: 5px;
+  display: block;
+}
+
+.fake-input {
+  width: 100%;
+  padding: 8px 11px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--gray-600);
+  background: #fff;
+  font-family: var(--sans);
+}
+
+.fake-input.focused { border-color: var(--preview-primary); }
+
+.fake-submit {
+  width: 100%;
+  padding: 10px;
+  background: var(--preview-primary);
+  color: var(--preview-primary-text);
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: default;
+  font-family: var(--sans);
+}
+
+/* Palette strips panel */
+.strip-section { }
+
+.strip-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+.strip {
+  display: flex;
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 72px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.strip-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+  cursor: pointer;
+  transition: flex 0.2s;
+  position: relative;
+}
+
+.strip-cell:hover { flex: 1.4; }
+
+.strip-cell-hex {
+  font-size: 9px;
+  font-family: var(--mono);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.strip-cell:hover .strip-cell-hex { opacity: 1; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--gray-900);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 20px;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot" id="logoDot"></div>
+    Palette
+  </div>
+  <div class="tab-pill">
+    <button class="active" id="tab-preview" onclick="switchTab('preview')">預覽</button>
+    <button id="tab-palettes" onclick="switchTab('palettes')">配色方案</button>
+    <button id="tab-scale" onclick="switchTab('scale')">色階 &amp; 對比</button>
+  </div>
+  <div class="topbar-right">
+    <button class="export-btn" style="width:auto;margin:0;padding:7px 14px" onclick="exportCSS()">匯出 CSS</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT -->
+  <div class="left">
+
+    <div>
+      <div class="section-title">主色</div>
+      <div class="color-picker-row">
+        <div class="big-swatch" id="bigSwatch">
+          <input type="color" id="mainColor" value="#5C6BC0">
+        </div>
+        <div class="color-meta">
+          <input type="text" class="hex-input" id="hexInput" value="#5C6BC0" maxlength="7">
+          <div class="hsl-display" id="hslDisplay">H 231° S 44% L 56%</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">快速選色</div>
+      <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px" id="presets"></div>
+    </div>
+
+    <div>
+      <div class="section-title">配色規則</div>
+      <div id="harmonyList"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+
+    <!-- PREVIEW PANEL -->
+    <div class="panel active" id="panel-preview">
+      <div class="mockup-browser">
+        <div class="browser-bar">
+          <div class="browser-dot" style="background:#ff5f57"></div>
+          <div class="browser-dot" style="background:#febc2e"></div>
+          <div class="browser-dot" style="background:#28c840"></div>
+          <div class="browser-url"></div>
+        </div>
+
+        <div class="fake-nav">
+          <div class="fake-logo">YourBrand</div>
+          <div class="fake-nav-links">
+            <span class="fake-nav-link">產品</span>
+            <span class="fake-nav-link">定價</span>
+            <span class="fake-nav-link">文件</span>
+          </div>
+          <button class="fake-nav-btn">開始使用</button>
+        </div>
+
+        <div class="fake-hero">
+          <div class="fake-hero-left">
+            <div class="fake-tag">設計工具</div>
+            <div class="fake-h1">讓你的配色<br><span>真正好用</span></div>
+            <div class="fake-desc">選一個主色，自動產出符合 WCAG 的配色系統。設計師、工程師、產品團隊都適用。</div>
+            <div class="fake-btn-row">
+              <button class="fake-btn-primary">免費開始</button>
+              <button class="fake-btn-secondary">看範例</button>
+            </div>
+          </div>
+          <div class="fake-hero-right">
+            <div class="fake-card">
+              <div class="fake-card-header">
+                <div class="fake-card-icon"></div>
+              </div>
+              <div class="fake-card-body">
+                <div class="fake-card-title">配色系統</div>
+                <div class="fake-card-text">主色、輔色、對比色一次產出，可直接複製 CSS 變數。</div>
+                <button class="fake-card-btn">查看方案</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fake-stats">
+          <div class="fake-stat">
+            <div class="fake-stat-num">12k+</div>
+            <div class="fake-stat-label">設計師使用</div>
+          </div>
+          <div class="fake-stat">
+            <div class="fake-stat-num">98%</div>
+            <div class="fake-stat-label">WCAG 通過率</div>
+          </div>
+          <div class="fake-stat">
+            <div class="fake-stat-num">4.9</div>
+            <div class="fake-stat-label">用戶評分</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PALETTES PANEL -->
+    <div class="panel" id="panel-palettes">
+      <div class="strip-section" id="stripSection"></div>
+    </div>
+
+    <!-- SCALE PANEL -->
+    <div class="panel" id="panel-scale">
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:24px">
+        <div class="section-title" style="margin-bottom:16px">單色系色階</div>
+        <div style="display:flex;gap:6px;margin-bottom:20px" id="scaleRow"></div>
+
+        <div class="section-title" style="margin-bottom:12px">WCAG 對比度</div>
+        <div id="contrastList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PRESETS = ['#E85D75','#F97316','#EAB308','#22C55E','#14B8A6','#3B82F6','#8B5CF6','#EC4899'];
+
+function hexToHsl(hex) {
+  let r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  let max=Math.max(r,g,b), min=Math.min(r,g,b), h, s, l=(max+min)/2;
+  if(max===min){h=s=0}else{
+    let d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}
+    h/=6;
+  }
+  return[Math.round(h*360),Math.round(s*100),Math.round(l*100)];
+}
+
+function hslToHex(h,s,l){
+  h/=360;s/=100;l/=100;
+  let r,g,b;
+  if(s===0){r=g=b=l}else{
+    const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+    r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3);
+  }
+  return'#'+[r,g,b].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
+}
+
+function hue2rgb(p,q,t){
+  if(t<0)t+=1;if(t>1)t-=1;
+  if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;
+}
+
+function isLight(hex){return hexToHsl(hex)[2]>55}
+function textOn(hex){return isLight(hex)?'#18181b':'#ffffff'}
+
+function contrastRatio(h1,h2){
+  function lum(hex){
+    let r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+    return 0.2126*(r<=0.03928?r/12.92:Math.pow((r+0.055)/1.055,2.4))
+          +0.7152*(g<=0.03928?g/12.92:Math.pow((g+0.055)/1.055,2.4))
+          +0.0722*(b<=0.03928?b/12.92:Math.pow((b+0.055)/1.055,2.4));
+  }
+  let l1=lum(h1),l2=lum(h2);
+  return((Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05)).toFixed(2);
+}
+
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1600);
+}
+
+function copy(text){navigator.clipboard.writeText(text).then(()=>toast('已複製 '+text))}
+
+function switchTab(name){
+  ['preview','palettes','scale'].forEach(p=>{
+    document.getElementById('panel-'+p).classList.toggle('active',p===name);
+    document.getElementById('tab-'+p).classList.toggle('active',p===name);
+  });
+}
+
+function exportCSS(){
+  const hex=document.getElementById('mainColor').value;
+  const[h,s,l]=hexToHsl(hex);
+  const light=hslToHex(h,s,92), dark=hslToHex(h,s,22);
+  const css=`:root {\n  --color-primary: ${hex};\n  --color-primary-light: ${light};\n  --color-primary-dark: ${dark};\n  --color-primary-text: ${textOn(hex)};\n}`;
+  copy(css);
+}
+
+function update(){
+  const hex=document.getElementById('mainColor').value;
+  const[h,s,l]=hexToHsl(hex);
+
+  document.getElementById('hexInput').value=hex.toUpperCase();
+  document.getElementById('hslDisplay').textContent=`H ${h}° S ${s}% L ${l}%`;
+  document.getElementById('bigSwatch').style.background=hex;
+  document.getElementById('logoDot').style.background=hex;
+
+  // CSS custom props for preview
+  const lightBg=hslToHex(h,Math.min(s,50),94);
+  const accentText=hslToHex(h,s,28);
+  document.documentElement.style.setProperty('--primary',hex);
+  document.documentElement.style.setProperty('--preview-primary',hex);
+  document.documentElement.style.setProperty('--preview-primary-text',textOn(hex));
+  document.documentElement.style.setProperty('--preview-accent-bg',lightBg);
+  document.documentElement.style.setProperty('--preview-accent-text',accentText);
+
+  // Harmonies
+  const harmonies=[
+    {label:'互補色', colors:[hex, hslToHex((h+180)%360,s,l)]},
+    {label:'類比色', colors:[hslToHex((h-30+360)%360,s,l), hex, hslToHex((h+30)%360,s,l)]},
+    {label:'三色配色', colors:[hex, hslToHex((h+120)%360,s,l), hslToHex((h+240)%360,s,l)]},
+    {label:'分裂互補', colors:[hex, hslToHex((h+150)%360,s,l), hslToHex((h+210)%360,s,l)]},
+    {label:'四色配色', colors:[hex, hslToHex((h+90)%360,s,l), hslToHex((h+180)%360,s,l), hslToHex((h+270)%360,s,l)]},
+  ];
+
+  const hl=document.getElementById('harmonyList'); hl.innerHTML='';
+  harmonies.forEach(({label,colors})=>{
+    const g=document.createElement('div'); g.className='harmony-group';
+    const lbl=document.createElement('div'); lbl.className='harmony-label'; lbl.textContent=label;
+    const row=document.createElement('div'); row.className='swatch-row';
+    colors.forEach(c=>{
+      const item=document.createElement('div'); item.className='swatch-item';
+      const block=document.createElement('div'); block.className='swatch-block'; block.style.background=c;
+      block.title='點擊複製'; block.onclick=()=>copy(c.toUpperCase());
+      const hx=document.createElement('div'); hx.className='swatch-hex'; hx.textContent=c.toUpperCase();
+      item.append(block,hx); row.appendChild(item);
+    });
+    g.append(lbl,row); hl.appendChild(g);
+  });
+
+  // Strips panel
+  const ss=document.getElementById('stripSection'); ss.innerHTML='';
+  harmonies.forEach(({label,colors})=>{
+    const sl=document.createElement('div'); sl.className='strip-label'; sl.textContent=label;
+    const strip=document.createElement('div'); strip.className='strip';
+    colors.forEach(c=>{
+      const cell=document.createElement('div'); cell.className='strip-cell'; cell.style.background=c;
+      const chex=document.createElement('div'); chex.className='strip-cell-hex';
+      chex.style.color=textOn(c); chex.textContent=c.toUpperCase();
+      cell.appendChild(chex); cell.onclick=()=>copy(c.toUpperCase());
+      strip.appendChild(cell);
+    });
+    ss.append(sl,strip);
+  });
+
+  // Scale
+  const stops=[96,88,76,62,50,38,26,16,8];
+  const sr=document.getElementById('scaleRow'); sr.innerHTML='';
+  stops.forEach(lt=>{
+    const sc=hslToHex(h,s,lt);
+    const b=document.createElement('div'); b.className='scale-block';
+    b.style.flex='1'; b.style.background=sc; b.title=sc;
+    b.onclick=()=>copy(sc.toUpperCase()); sr.appendChild(b);
+  });
+
+  // Contrast
+  const cl=document.getElementById('contrastList'); cl.innerHTML='';
+  [
+    ['白底，主色文字','#ffffff',hex],
+    ['黑底，主色文字','#000000',hex],
+    ['主色底，白字',hex,'#ffffff'],
+    ['主色底，黑字',hex,'#000000'],
+    ['淺底（90%L），主色文字',hslToHex(h,s,90),hex],
+  ].forEach(([name,bg,fg])=>{
+    const ratio=contrastRatio(bg,fg);
+    const aaa=ratio>=7, aa=ratio>=4.5;
+    const row=document.createElement('div'); row.className='contrast-row';
+    row.innerHTML=`<span class="contrast-name">${name}</span>
+      <div class="contrast-right">
+        <span class="contrast-num">${ratio}:1</span>
+        <span class="wcag-badge ${aaa?'wcag-aaa':aa?'wcag-aa':'wcag-fail'}">${aaa?'AAA':aa?'AA':'Fail'}</span>
+      </div>`;
+    cl.appendChild(row);
+  });
+}
+
+// Presets
+const pg=document.getElementById('presets');
+PRESETS.forEach(c=>{
+  const b=document.createElement('div');
+  b.style.cssText=`width:100%;aspect-ratio:1;border-radius:6px;background:${c};cursor:pointer;border:1px solid rgba(0,0,0,0.08);transition:transform 0.12s`;
+  b.onmouseenter=()=>b.style.transform='scale(1.12)';
+  b.onmouseleave=()=>b.style.transform='';
+  b.onclick=()=>{document.getElementById('mainColor').value=c;update()};
+  pg.appendChild(b);
+});
+
+document.getElementById('mainColor').addEventListener('input',update);
+document.getElementById('hexInput').addEventListener('input',function(){
+  const v=this.value.trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('mainColor').value=v;update();}
+});
+
+update();
+</script>
+</body>
+</html>
